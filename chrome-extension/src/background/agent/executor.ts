@@ -24,7 +24,6 @@ import { URLNotAllowedError } from '../browser/views';
 import { chatHistoryStore } from '@extension/storage/lib/chat';
 import type { AgentStepHistory } from './history';
 import type { GeneralSettingsConfig } from '@extension/storage';
-import { analytics } from '../services/analytics';
 
 const logger = createLogger('Executor');
 
@@ -43,6 +42,9 @@ export class Executor {
   private readonly navigatorPrompt: NavigatorPrompt;
   private readonly generalSettings: GeneralSettingsConfig | undefined;
   private tasks: string[] = [];
+  private history: MessageManager;
+  private maxSteps: number;
+
   constructor(
     task: string,
     taskId: string,
@@ -87,6 +89,9 @@ export class Executor {
     this.context = context;
     // Initialize message history
     this.context.messageManager.initTaskMessages(this.navigatorPrompt.getSystemMessage(), task);
+
+    this.history = messageManager;
+    this.maxSteps = context.options.maxSteps;
   }
 
   subscribeExecutionEvents(callback: EventCallback): void {
@@ -125,7 +130,13 @@ export class Executor {
    *
    * @returns {Promise<void>}
    */
-  async execute(): Promise<void> {
+  public async execute(): Promise<void> {
+    // Track task start
+    // void analytics.trackTaskStart(this.context.taskId);
+
+    // Create a new history branch for this execution
+    // this.history.newBranch();
+
     logger.info(`🚀 Executing task: ${this.tasks[this.tasks.length - 1]}`);
     // reset the step counter
     const context = this.context;
@@ -134,9 +145,6 @@ export class Executor {
 
     try {
       this.context.emitEvent(Actors.SYSTEM, ExecutionState.TASK_START, this.context.taskId);
-
-      // Track task start
-      void analytics.trackTaskStart(this.context.taskId);
 
       let step = 0;
       let latestPlanOutput: AgentOutput<PlannerOutput> | null = null;
@@ -182,20 +190,17 @@ export class Executor {
         this.context.emitEvent(Actors.SYSTEM, ExecutionState.TASK_OK, finalMessage);
 
         // Track task completion
-        void analytics.trackTaskComplete(this.context.taskId);
+        // void analytics.trackTaskComplete(this.context.taskId);
       } else if (step >= allowedMaxSteps) {
         logger.error('❌ Task failed: Max steps reached');
         this.context.emitEvent(Actors.SYSTEM, ExecutionState.TASK_FAIL, t('exec_errors_maxStepsReached'));
 
         // Track task failure with specific error category
         const maxStepsError = new MaxStepsReachedError(t('exec_errors_maxStepsReached'));
-        const errorCategory = analytics.categorizeError(maxStepsError);
-        void analytics.trackTaskFailed(this.context.taskId, errorCategory);
       } else if (this.context.stopped) {
         this.context.emitEvent(Actors.SYSTEM, ExecutionState.TASK_CANCEL, t('exec_task_cancel'));
 
         // Track task cancellation
-        void analytics.trackTaskCancelled(this.context.taskId);
       } else {
         this.context.emitEvent(Actors.SYSTEM, ExecutionState.TASK_PAUSE, t('exec_task_pause'));
         // Note: We don't track pause as it's not a final state
@@ -205,14 +210,11 @@ export class Executor {
         this.context.emitEvent(Actors.SYSTEM, ExecutionState.TASK_CANCEL, t('exec_task_cancel'));
 
         // Track task cancellation
-        void analytics.trackTaskCancelled(this.context.taskId);
       } else {
         const errorMessage = error instanceof Error ? error.message : String(error);
         this.context.emitEvent(Actors.SYSTEM, ExecutionState.TASK_FAIL, t('exec_task_fail', [errorMessage]));
 
         // Track task failure with detailed error categorization
-        const errorCategory = analytics.categorizeError(error instanceof Error ? error : errorMessage);
-        void analytics.trackTaskFailed(this.context.taskId, errorCategory);
       }
     } finally {
       if (import.meta.env.DEV) {
