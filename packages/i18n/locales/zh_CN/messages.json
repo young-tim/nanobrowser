@@ -247,6 +247,24 @@
   "config_export_error": {
     "message": "导出配置失败。"
   },
+  "config_reset_title": {
+    "message": "恢复默认配置"
+  },
+  "config_reset_description": {
+    "message": "将所有设置重置为默认值。此操作无法撤销。"
+  },
+  "config_reset_button": {
+    "message": "重置设置"
+  },
+  "config_reset_success": {
+    "message": "配置已成功重置为默认值！"
+  },
+  "config_reset_error": {
+    "message": "重置配置失败。"
+  },
+  "config_reset_confirm": {
+    "message": "您确定要将所有设置重置为默认值吗？此操作无法撤销。"
+  },
   "options_general_header": {
     "message": "常规"
   },

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FiDownload, FiUpload } from 'react-icons/fi';
+import { FiDownload, FiUpload, FiRefreshCw } from 'react-icons/fi';
 import { t } from '@extension/i18n';
 import { Button } from '@extension/ui';
 import { generalSettingsStore, firewallStore, llmProviderStore, agentModelStore } from '@extension/storage';
@@ -110,6 +110,40 @@ const ConfigSettings = ({ isDarkMode = false }: { isDarkMode?: boolean }) => {
     event.target.value = '';
   };
 
+  const handleResetToDefaults = async () => {
+    // 显示确认对话框
+    const confirmed = window.confirm(t('config_reset_confirm'));
+
+    if (!confirmed) {
+      return; // 用户取消操作
+    }
+
+    try {
+      // 重置通用设置
+      await generalSettingsStore.resetToDefaults();
+
+      // 重置防火墙设置
+      await firewallStore.resetToDefaults();
+
+      // 重置提供商设置
+      const currentProviders = await llmProviderStore.getAllProviders();
+      for (const providerId of Object.keys(currentProviders)) {
+        await llmProviderStore.removeProvider(providerId);
+      }
+
+      // 重置代理模型设置
+      const currentModels = await agentModelStore.getAllAgentModels();
+      for (const agent of Object.keys(currentModels)) {
+        await agentModelStore.resetAgentModel(agent as any);
+      }
+
+      setImportStatus({ type: 'success', message: t('config_reset_success') });
+    } catch (error) {
+      console.error('重置配置时出错:', error);
+      setImportStatus({ type: 'error', message: t('config_reset_error') });
+    }
+  };
+
   return (
     <section className="space-y-6">
       <div
@@ -155,6 +189,23 @@ const ConfigSettings = ({ isDarkMode = false }: { isDarkMode?: boolean }) => {
                 <input type="file" accept=".json" onChange={handleImport} className="hidden" />
               </label>
             </div>
+          </div>
+
+          <div className={`rounded-lg border ${isDarkMode ? 'border-slate-600' : 'border-gray-200'} p-4`}>
+            <h3 className={`mb-3 text-lg font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+              {t('config_reset_title')}
+            </h3>
+            <p className={`mb-4 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              {t('config_reset_description')}
+            </p>
+            <Button
+              onClick={handleResetToDefaults}
+              className={`flex items-center space-x-2 rounded-md px-4 py-2 ${
+                isDarkMode ? 'bg-red-700 text-white hover:bg-red-600' : 'bg-red-500 text-white hover:bg-red-600'
+              }`}>
+              <FiRefreshCw className="h-4 w-4" />
+              <span>{t('config_reset_button')}</span>
+            </Button>
           </div>
 
           {importStatus && (
