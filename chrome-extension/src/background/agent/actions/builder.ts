@@ -31,6 +31,7 @@ import { wrapUntrustedContent } from '../messages/utils';
 
 const logger = createLogger('Action');
 
+// 无效输入错误类
 export class InvalidInputError extends Error {
   constructor(message: string) {
     super(message);
@@ -39,22 +40,24 @@ export class InvalidInputError extends Error {
 }
 
 /**
- * An action is a function that takes an input and returns an ActionResult
+ * 动作类，表示一个可以执行的操作
+ * 动作是一个函数，接收输入参数并返回动作执行结果
  */
 export class Action {
   constructor(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private readonly handler: (input: any) => Promise<ActionResult>,
     public readonly schema: ActionSchema,
-    // Whether this action has an index argument
+    // 是否有索引参数
     public readonly hasIndex: boolean = false,
   ) {}
 
+  // 执行动作
   async call(input: unknown): Promise<ActionResult> {
-    // Validate input before calling the handler
+    // 验证输入参数
     const schema = this.schema.schema;
 
-    // check if the schema is schema: z.object({}), if so, ignore the input
+    // 检查模式是否为空对象
     const isEmptySchema =
       schema instanceof z.ZodObject &&
       Object.keys((schema as z.ZodObject<Record<string, z.ZodTypeAny>>).shape || {}).length === 0;
@@ -71,13 +74,14 @@ export class Action {
     return await this.handler(parsedArgs.data);
   }
 
+  // 获取动作名称
   name() {
     return this.schema.name;
   }
 
   /**
-   * Returns the prompt for the action
-   * @returns {string} The prompt for the action
+   * 返回动作的提示信息
+   * @returns {string} 动作的提示信息
    */
   prompt() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -94,9 +98,9 @@ export class Action {
   }
 
   /**
-   * Get the index argument from the input if this action has an index
-   * @param input The input to extract the index from
-   * @returns The index value if found, null otherwise
+   * 如果此动作有索引参数，则从输入中提取索引
+   * @param input 要从中提取索引的输入
+   * @returns 找到的索引值，否则返回null
    */
   getIndexArg(input: unknown): number | null {
     if (!this.hasIndex) {
@@ -109,10 +113,10 @@ export class Action {
   }
 
   /**
-   * Set the index argument in the input if this action has an index
-   * @param input The input to update the index in
-   * @param newIndex The new index value to set
-   * @returns Whether the index was set successfully
+   * 如果此动作有索引参数，则在输入中设置索引
+   * @param input 要更新索引的输入
+   * @param newIndex 要设置的新索引值
+   * @returns 是否成功设置了索引
    */
   setIndexArg(input: unknown, newIndex: number): boolean {
     if (!this.hasIndex) {
@@ -126,12 +130,13 @@ export class Action {
   }
 }
 
-// TODO: can not make every action optional, don't know why
+// 构建动态动作模式
+// TODO: 不能使每个动作都可选，不知道为什么
 export function buildDynamicActionSchema(actions: Action[]): z.ZodType {
   let schema = z.object({});
   for (const action of actions) {
-    // create a schema for the action, it could be action.schema.schema or null
-    // but don't use default: null as it causes issues with Google Generative AI
+    // 为动作创建模式，可以是 action.schema.schema 或 null
+    // 但不要使用 default: null，因为它会导致 Google Generative AI 出现问题
     const actionSchema = action.schema.schema;
     schema = schema.extend({
       [action.name()]: actionSchema.nullable().optional().describe(action.schema.description),
@@ -140,6 +145,7 @@ export function buildDynamicActionSchema(actions: Action[]): z.ZodType {
   return schema;
 }
 
+// 动作构建器类
 export class ActionBuilder {
   private readonly context: AgentContext;
   private readonly extractorLLM: BaseChatModel;
@@ -149,9 +155,11 @@ export class ActionBuilder {
     this.extractorLLM = extractorLLM;
   }
 
+  // 构建默认动作集合
   buildDefaultActions() {
     const actions = [];
 
+    // 完成动作 - 表示任务完成并返回结果
     const done = new Action(async (input: z.infer<typeof doneActionSchema.schema>) => {
       this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, doneActionSchema.name);
       this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_OK, input.text);
@@ -162,6 +170,7 @@ export class ActionBuilder {
     }, doneActionSchema);
     actions.push(done);
 
+    // Google搜索动作
     const searchGoogle = new Action(async (input: z.infer<typeof searchGoogleActionSchema.schema>) => {
       const context = this.context;
       const intent = input.intent || t('act_searchGoogle_start', [input.query]);
@@ -178,6 +187,7 @@ export class ActionBuilder {
     }, searchGoogleActionSchema);
     actions.push(searchGoogle);
 
+    // 跳转到URL动作
     const goToUrl = new Action(async (input: z.infer<typeof goToUrlActionSchema.schema>) => {
       const intent = input.intent || t('act_goToUrl_start', [input.url]);
       this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
@@ -192,6 +202,7 @@ export class ActionBuilder {
     }, goToUrlActionSchema);
     actions.push(goToUrl);
 
+    // 返回上一页动作
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const goBack = new Action(async (input: z.infer<typeof goBackActionSchema.schema>) => {
       const intent = input.intent || t('act_goBack_start');
@@ -208,6 +219,7 @@ export class ActionBuilder {
     }, goBackActionSchema);
     actions.push(goBack);
 
+    // 等待动作
     const wait = new Action(async (input: z.infer<typeof waitActionSchema.schema>) => {
       const seconds = input.seconds || 3;
       const intent = input.intent || t('act_wait_start', [seconds.toString()]);
@@ -219,7 +231,8 @@ export class ActionBuilder {
     }, waitActionSchema);
     actions.push(wait);
 
-    // Element Interaction Actions
+    // 元素交互动作
+    // 点击元素动作
     const clickElement = new Action(
       async (input: z.infer<typeof clickElementActionSchema.schema>) => {
         const intent = input.intent || t('act_click_start', [input.index.toString()]);
@@ -233,7 +246,7 @@ export class ActionBuilder {
           throw new Error(t('act_errors_elementNotExist', [input.index.toString()]));
         }
 
-        // Check if element is a file uploader
+        // 检查元素是否为文件上传器
         if (page.isFileUploader(elementNode)) {
           const msg = t('act_click_fileUploader', [input.index.toString()]);
           logger.info(msg);
@@ -249,13 +262,13 @@ export class ActionBuilder {
           let msg = t('act_click_ok', [input.index.toString(), elementNode.getAllTextTillNextClickableElement(2)]);
           logger.info(msg);
 
-          // TODO: could be optimized by chrome extension tab api
+          // TODO: 可以通过chrome扩展标签页API优化
           const currentTabIds = await this.context.browserContext.getAllTabIds();
           if (currentTabIds.size > initialTabIds.size) {
             const newTabMsg = t('act_click_newTabOpened');
             msg += ` - ${newTabMsg}`;
             logger.info(newTabMsg);
-            // find the tab id that is not in the initial tab ids
+            // 查找不在初始标签页ID中的标签页ID
             const newTabId = Array.from(currentTabIds).find(id => !initialTabIds.has(id));
             if (newTabId) {
               await this.context.browserContext.switchTab(newTabId);
@@ -276,6 +289,7 @@ export class ActionBuilder {
     );
     actions.push(clickElement);
 
+    // 输入文本动作
     const inputText = new Action(
       async (input: z.infer<typeof inputTextActionSchema.schema>) => {
         const intent = input.intent || t('act_inputText_start', [input.index.toString()]);
@@ -299,7 +313,8 @@ export class ActionBuilder {
     );
     actions.push(inputText);
 
-    // Tab Management Actions
+    // 标签页管理动作
+    // 切换标签页动作
     const switchTab = new Action(async (input: z.infer<typeof switchTabActionSchema.schema>) => {
       const intent = input.intent || t('act_switchTab_start', [input.tab_id.toString()]);
       this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
@@ -310,6 +325,7 @@ export class ActionBuilder {
     }, switchTabActionSchema);
     actions.push(switchTab);
 
+    // 打开新标签页动作
     const openTab = new Action(async (input: z.infer<typeof openTabActionSchema.schema>) => {
       const intent = input.intent || t('act_openTab_start', [input.url]);
       this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
@@ -320,6 +336,7 @@ export class ActionBuilder {
     }, openTabActionSchema);
     actions.push(openTab);
 
+    // 关闭标签页动作
     const closeTab = new Action(async (input: z.infer<typeof closeTabActionSchema.schema>) => {
       const intent = input.intent || t('act_closeTab_start', [input.tab_id.toString()]);
       this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
@@ -330,7 +347,7 @@ export class ActionBuilder {
     }, closeTabActionSchema);
     actions.push(closeTab);
 
-    // Content Actions
+    // 内容动作
     // TODO: this is not used currently, need to improve on input size
     // const extractContent = new Action(async (input: z.infer<typeof extractContentActionSchema.schema>) => {
     //   const goal = input.goal;
@@ -362,12 +379,12 @@ export class ActionBuilder {
     // }, extractContentActionSchema);
     // actions.push(extractContent);
 
-    // cache content for future use
+    // 缓存内容动作
     const cacheContent = new Action(async (input: z.infer<typeof cacheContentActionSchema.schema>) => {
       const intent = input.intent || t('act_cache_start', [input.content]);
       this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
 
-      // cache content is untrusted content, it is not instructions
+      // 缓存的内容是不可信的内容，不是指令
       const rawMsg = t('act_cache_ok', [input.content]);
       this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_OK, rawMsg);
 
@@ -376,7 +393,7 @@ export class ActionBuilder {
     }, cacheContentActionSchema);
     actions.push(cacheContent);
 
-    // Scroll to percent
+    // 滚动到百分比位置动作
     const scrollToPercent = new Action(async (input: z.infer<typeof scrollToPercentActionSchema.schema>) => {
       const intent = input.intent || t('act_scrollToPercent_start');
       this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
@@ -390,7 +407,7 @@ export class ActionBuilder {
           this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_FAIL, errorMsg);
           return new ActionResult({ error: errorMsg, includeInMemory: true });
         }
-        logger.info(`Scrolling to percent: ${input.yPercent} with elementNode: ${elementNode.xpath}`);
+        logger.info(`滚动到百分比: ${input.yPercent}，元素节点: ${elementNode.xpath}`);
         await page.scrollToPercent(input.yPercent, elementNode);
       } else {
         await page.scrollToPercent(input.yPercent);
@@ -401,7 +418,7 @@ export class ActionBuilder {
     }, scrollToPercentActionSchema);
     actions.push(scrollToPercent);
 
-    // Scroll to top
+    // 滚动到顶部动作
     const scrollToTop = new Action(async (input: z.infer<typeof scrollToTopActionSchema.schema>) => {
       const intent = input.intent || t('act_scrollToTop_start');
       this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
@@ -424,7 +441,7 @@ export class ActionBuilder {
     }, scrollToTopActionSchema);
     actions.push(scrollToTop);
 
-    // Scroll to bottom
+    // 滚动到底部动作
     const scrollToBottom = new Action(async (input: z.infer<typeof scrollToBottomActionSchema.schema>) => {
       const intent = input.intent || t('act_scrollToBottom_start');
       this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
@@ -447,7 +464,7 @@ export class ActionBuilder {
     }, scrollToBottomActionSchema);
     actions.push(scrollToBottom);
 
-    // Scroll to previous page
+    // 滚动到上一页动作
     const previousPage = new Action(async (input: z.infer<typeof previousPageActionSchema.schema>) => {
       const intent = input.intent || t('act_previousPage_start');
       this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
@@ -462,7 +479,7 @@ export class ActionBuilder {
           return new ActionResult({ error: errorMsg, includeInMemory: true });
         }
 
-        // Check if element is already at top of its scrollable area
+        // 检查元素是否已在滚动区域的顶部
         try {
           const [elementScrollTop] = await page.getElementScrollInfo(elementNode);
           if (elementScrollTop === 0) {
@@ -471,15 +488,13 @@ export class ActionBuilder {
             return new ActionResult({ extractedContent: msg, includeInMemory: true });
           }
         } catch (error) {
-          // If we can't get scroll info, let the scrollToPreviousPage method handle it
-          logger.warning(
-            `Could not get element scroll info: ${error instanceof Error ? error.message : String(error)}`,
-          );
+          // 如果我们无法获取滚动信息，让scrollToPreviousPage方法处理
+          logger.warning(`无法获取元素滚动信息: ${error instanceof Error ? error.message : String(error)}`);
         }
 
         await page.scrollToPreviousPage(elementNode);
       } else {
-        // Check if page is already at top
+        // 检查页面是否已在顶部
         const [initialScrollY] = await page.getScrollInfo();
         if (initialScrollY === 0) {
           const msg = t('act_errors_pageAlreadyAtTop');
@@ -495,7 +510,7 @@ export class ActionBuilder {
     }, previousPageActionSchema);
     actions.push(previousPage);
 
-    // Scroll to next page
+    // 滚动到下一页动作
     const nextPage = new Action(async (input: z.infer<typeof nextPageActionSchema.schema>) => {
       const intent = input.intent || t('act_nextPage_start');
       this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
@@ -510,7 +525,7 @@ export class ActionBuilder {
           return new ActionResult({ error: errorMsg, includeInMemory: true });
         }
 
-        // Check if element is already at bottom of its scrollable area
+        // 检查元素是否已在滚动区域的底部
         try {
           const [elementScrollTop, elementClientHeight, elementScrollHeight] =
             await page.getElementScrollInfo(elementNode);
@@ -520,15 +535,13 @@ export class ActionBuilder {
             return new ActionResult({ extractedContent: msg, includeInMemory: true });
           }
         } catch (error) {
-          // If we can't get scroll info, let the scrollToNextPage method handle it
-          logger.warning(
-            `Could not get element scroll info: ${error instanceof Error ? error.message : String(error)}`,
-          );
+          // 如果我们无法获取滚动信息，让scrollToNextPage方法处理
+          logger.warning(`无法获取元素滚动信息: ${error instanceof Error ? error.message : String(error)}`);
         }
 
         await page.scrollToNextPage(elementNode);
       } else {
-        // Check if page is already at bottom
+        // 检查页面是否已在底部
         const [initialScrollY, initialVisualViewportHeight, initialScrollHeight] = await page.getScrollInfo();
         if (initialScrollY + initialVisualViewportHeight >= initialScrollHeight) {
           const msg = t('act_errors_pageAlreadyAtBottom');
@@ -544,7 +557,7 @@ export class ActionBuilder {
     }, nextPageActionSchema);
     actions.push(nextPage);
 
-    // Scroll to text
+    // 滚动到文本动作
     const scrollToText = new Action(async (input: z.infer<typeof scrollToTextActionSchema.schema>) => {
       const intent = input.intent || t('act_scrollToText_start', [input.text, input.nth.toString()]);
       this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
@@ -565,7 +578,8 @@ export class ActionBuilder {
     }, scrollToTextActionSchema);
     actions.push(scrollToText);
 
-    // Keyboard Actions
+    // 键盘动作
+    // 发送按键动作
     const sendKeys = new Action(async (input: z.infer<typeof sendKeysActionSchema.schema>) => {
       const intent = input.intent || t('act_sendKeys_start', [input.keys]);
       this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
@@ -578,7 +592,7 @@ export class ActionBuilder {
     }, sendKeysActionSchema);
     actions.push(sendKeys);
 
-    // Get all options from a native dropdown
+    // 从原生下拉菜单获取所有选项动作
     const getDropdownOptions = new Action(
       async (input: z.infer<typeof getDropdownOptionsActionSchema.schema>) => {
         const intent = input.intent || t('act_getDropdownOptions_start', [input.index.toString()]);
@@ -598,13 +612,13 @@ export class ActionBuilder {
         }
 
         try {
-          // Use the existing getDropdownOptions method
+          // 使用现有的getDropdownOptions方法
           const options = await page.getDropdownOptions(input.index);
 
           if (options && options.length > 0) {
-            // Format options for display
+            // 格式化选项用于显示
             const formattedOptions: string[] = options.map(opt => {
-              // Encoding ensures AI uses the exact string in select_dropdown_option
+              // 编码确保AI在select_dropdown_option中使用确切的字符串
               const encodedText = JSON.stringify(opt.text);
               return `${opt.index}: text=${encodedText}`;
             });
@@ -622,8 +636,8 @@ export class ActionBuilder {
             });
           }
 
-          // This code should not be reached as getDropdownOptions throws an error when no options found
-          // But keeping as fallback
+          // 此代码不应到达，因为当未找到选项时getDropdownOptions会抛出错误
+          // 但保留作为后备方案
           const msg = t('act_getDropdownOptions_noOptions');
           this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_OK, msg);
           return new ActionResult({
@@ -644,7 +658,7 @@ export class ActionBuilder {
     );
     actions.push(getDropdownOptions);
 
-    // Select dropdown option for interactive element index by the text of the option you want to select'
+    // 通过选项文本选择下拉菜单中的选项动作
     const selectDropdownOption = new Action(
       async (input: z.infer<typeof selectDropdownOptionActionSchema.schema>) => {
         const intent = input.intent || t('act_selectDropdownOption_start', [input.text, input.index.toString()]);
@@ -663,7 +677,7 @@ export class ActionBuilder {
           });
         }
 
-        // Validate that we're working with a select element
+        // 验证我们正在处理的是select元素
         if (!elementNode.tagName || elementNode.tagName.toLowerCase() !== 'select') {
           const errorMsg = t('act_selectDropdownOption_notSelect', [
             input.index.toString(),
@@ -676,7 +690,7 @@ export class ActionBuilder {
           });
         }
 
-        logger.debug(`Attempting to select '${input.text}' using xpath: ${elementNode.xpath}`);
+        logger.debug(`尝试选择 '${input.text}'，使用xpath: ${elementNode.xpath}`);
 
         try {
           const result = await page.selectDropdownOption(input.index, input.text);

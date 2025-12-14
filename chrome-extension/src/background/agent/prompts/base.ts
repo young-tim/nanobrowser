@@ -5,26 +5,26 @@ import { createLogger } from '@src/background/log';
 
 const logger = createLogger('BasePrompt');
 /**
- * Abstract base class for all prompt types
+ * 所有提示类型的基础抽象类
  */
 abstract class BasePrompt {
   /**
-   * Returns the system message that defines the AI's role and behavior
-   * @returns SystemMessage from LangChain
+   * 返回定义AI角色和行为的系统消息
+   * @returns 来自LangChain的SystemMessage
    */
   abstract getSystemMessage(): SystemMessage;
 
   /**
-   * Returns the user message for the specific prompt type
-   * @param context - Optional context data needed for generating the user message
-   * @returns HumanMessage from LangChain
+   * 返回特定提示类型的用户消息
+   * @param context - 生成用户消息所需的可选上下文数据
+   * @returns 来自LangChain的HumanMessage
    */
   abstract getUserMessage(context: AgentContext): Promise<HumanMessage>;
 
   /**
-   * Builds the user message containing the browser state
-   * @param context - The agent context
-   * @returns HumanMessage from LangChain
+   * 构建包含浏览器状态的用户消息
+   * @param context - 代理上下文
+   * @returns 来自LangChain的HumanMessage
    */
   async buildBrowserStateUserMessage(context: AgentContext): Promise<HumanMessage> {
     const browserState = await context.browserContext.getState(context.options.useVision);
@@ -32,33 +32,33 @@ abstract class BasePrompt {
 
     let formattedElementsText = '';
     if (rawElementsText !== '') {
-      const scrollInfo = `[Scroll info of current page] window.scrollY: ${browserState.scrollY}, document.body.scrollHeight: ${browserState.scrollHeight}, window.visualViewport.height: ${browserState.visualViewportHeight}, visual viewport height as percentage of scrollable distance: ${Math.round((browserState.visualViewportHeight / (browserState.scrollHeight - browserState.visualViewportHeight)) * 100)}%\n`;
+      const scrollInfo = `[当前页面的滚动信息] window.scrollY: ${browserState.scrollY}, document.body.scrollHeight: ${browserState.scrollHeight}, window.visualViewport.height: ${browserState.visualViewportHeight}, 视口高度占可滚动距离的百分比: ${Math.round((browserState.visualViewportHeight / (browserState.scrollHeight - browserState.visualViewportHeight)) * 100)}%\n`;
       logger.info(scrollInfo);
       const elementsText = wrapUntrustedContent(rawElementsText);
-      formattedElementsText = `${scrollInfo}[Start of page]\n${elementsText}\n[End of page]\n`;
+      formattedElementsText = `${scrollInfo}[页面开始]\n${elementsText}\n[页面结束]\n`;
     } else {
-      formattedElementsText = 'empty page';
+      formattedElementsText = '空页面';
     }
 
     let stepInfoDescription = '';
     if (context.stepInfo) {
-      stepInfoDescription = `Current step: ${context.stepInfo.stepNumber + 1}/${context.stepInfo.maxSteps}`;
+      stepInfoDescription = `当前步骤: ${context.stepInfo.stepNumber + 1}/${context.stepInfo.maxSteps}`;
     }
 
-    const timeStr = new Date().toISOString().slice(0, 16).replace('T', ' '); // Format: YYYY-MM-DD HH:mm
-    stepInfoDescription += `Current date and time: ${timeStr}`;
+    const timeStr = new Date().toISOString().slice(0, 16).replace('T', ' '); // 格式: YYYY-MM-DD HH:mm
+    stepInfoDescription += `当前日期和时间: ${timeStr}`;
 
     let actionResultsDescription = '';
     if (context.actionResults.length > 0) {
       for (let i = 0; i < context.actionResults.length; i++) {
         const result = context.actionResults[i];
         if (result.extractedContent) {
-          actionResultsDescription += `\nAction result ${i + 1}/${context.actionResults.length}: ${result.extractedContent}`;
+          actionResultsDescription += `\n动作结果 ${i + 1}/${context.actionResults.length}: ${result.extractedContent}`;
         }
         if (result.error) {
-          // only use last line of error
+          // 仅使用错误的最后一行
           const error = result.error.split('\n').pop();
-          actionResultsDescription += `\nAction error ${i + 1}/${context.actionResults.length}: ...${error}`;
+          actionResultsDescription += `\n动作错误 ${i + 1}/${context.actionResults.length}: ...${error}`;
         }
       }
     }
@@ -68,13 +68,13 @@ abstract class BasePrompt {
       .filter(tab => tab.id !== browserState.tabId)
       .map(tab => `- {id: ${tab.id}, url: ${tab.url}, title: ${tab.title}}`);
     const stateDescription = `
-[Task history memory ends]
-[Current state starts here]
-The following is one-time information - if you need to remember it write it to memory:
-Current tab: ${currentTab}
-Other available tabs:
+[任务历史记忆结束]
+[当前状态从此处开始]
+以下是一次性信息 - 如果你需要记住它，请将其写入内存:
+当前标签页: ${currentTab}
+其他可用标签页:
   ${otherTabs.join('\n')}
-Interactive elements from top layer of the current page inside the viewport:
+当前页面视口内顶层的交互元素:
 ${formattedElementsText}
 ${stepInfoDescription}
 ${actionResultsDescription}

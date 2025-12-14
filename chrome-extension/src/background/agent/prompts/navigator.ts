@@ -14,16 +14,16 @@ export class NavigatorPrompt extends BasePrompt {
     super();
 
     const promptTemplate = navigatorSystemPromptTemplate;
-    // Format the template with the maxActionsPerStep
+    // 使用maxActionsPerStep格式化模板
     const formattedPrompt = promptTemplate.replace('{{max_actions}}', this.maxActionsPerStep.toString()).trim();
     this.systemMessage = new SystemMessage(formattedPrompt);
   }
 
   getSystemMessage(): SystemMessage {
     /**
-     * Get the system prompt for the agent.
+     * 获取代理的系统提示。
      *
-     * @returns SystemMessage containing the formatted system prompt
+     * @returns 包含格式化系统提示的SystemMessage
      */
     return this.systemMessage;
   }
