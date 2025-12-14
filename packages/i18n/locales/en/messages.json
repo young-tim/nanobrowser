@@ -248,22 +248,25 @@
     "message": "Failed to export configuration."
   },
   "config_reset_title": {
-    "message": "Reset to Defaults"
+    "message": "Reset Configuration"
   },
   "config_reset_description": {
     "message": "Reset all settings to their default values. This action cannot be undone."
   },
   "config_reset_button": {
-    "message": "Reset Settings"
+    "message": "Reset to Defaults"
   },
-  "config_reset_success": {
-    "message": "Configuration reset to defaults successfully!"
-  },
-  "config_reset_error": {
-    "message": "Failed to reset configuration to defaults."
+  "config_reset_button_loading": {
+    "message": "Resetting..."
   },
   "config_reset_confirm": {
-    "message": "Are you sure you want to reset all settings to their default values? This action cannot be undone."
+    "message": "Are you sure you want to reset all configurations to their default values? This action cannot be undone."
+  },
+  "config_reset_success": {
+    "message": "Configuration reset successfully!"
+  },
+  "config_reset_error": {
+    "message": "Failed to reset configuration."
   },
   "options_general_header": {
     "message": "General"

@@ -262,9 +262,6 @@
   "config_reset_error": {
     "message": "重置配置失败。"
   },
-  "config_reset_confirm": {
-    "message": "您确定要将所有设置重置为默认值吗？此操作无法撤销。"
-  },
   "options_general_header": {
     "message": "常规"
   },
