@@ -211,6 +211,42 @@
   "options_tabs_help": {
     "message": "帮助"
   },
+  "options_tabs_config": {
+    "message": "配置"
+  },
+  "options_config_header": {
+    "message": "配置管理"
+  },
+  "config_export_title": {
+    "message": "导出配置"
+  },
+  "config_export_description": {
+    "message": "将所有设置（包括常规、模型和防火墙配置）导出为 JSON 文件。"
+  },
+  "config_export_button": {
+    "message": "导出设置"
+  },
+  "config_import_title": {
+    "message": "导入配置"
+  },
+  "config_import_description": {
+    "message": "从 JSON 文件导入设置。这将覆盖您当前的常规、模型和防火墙配置。"
+  },
+  "config_import_button": {
+    "message": "导入设置"
+  },
+  "config_import_success": {
+    "message": "配置导入成功！"
+  },
+  "config_import_error": {
+    "message": "导入配置失败，请检查文件格式。"
+  },
+  "config_import_read_error": {
+    "message": "读取配置文件失败。"
+  },
+  "config_export_error": {
+    "message": "导出配置失败。"
+  },
   "options_general_header": {
     "message": "常规"
   },

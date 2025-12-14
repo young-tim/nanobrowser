@@ -211,6 +211,42 @@
   "options_tabs_help": {
     "message": "說明"
   },
+  "options_tabs_config": {
+    "message": "設定"
+  },
+  "options_config_header": {
+    "message": "設定管理"
+  },
+  "config_export_title": {
+    "message": "匯出設定"
+  },
+  "config_export_description": {
+    "message": "將所有設定（包括一般、模型和防火牆設定）匯出為 JSON 檔案。"
+  },
+  "config_export_button": {
+    "message": "匯出設定"
+  },
+  "config_import_title": {
+    "message": "匯入設定"
+  },
+  "config_import_description": {
+    "message": "從 JSON 檔案匯入設定。這將覆蓋您目前的一般、模型和防火牆設定。"
+  },
+  "config_import_button": {
+    "message": "匯入設定"
+  },
+  "config_import_success": {
+    "message": "設定匯入成功！"
+  },
+  "config_import_error": {
+    "message": "匯入設定失敗，請檢查檔案格式。"
+  },
+  "config_import_read_error": {
+    "message": "讀取設定檔失敗。"
+  },
+  "config_export_error": {
+    "message": "匯出設定失敗。"
+  },
   "options_general_header": {
     "message": "一般"
   },

@@ -211,6 +211,42 @@
   "options_tabs_help": {
     "message": "Help"
   },
+  "options_tabs_config": {
+    "message": "Config"
+  },
+  "options_config_header": {
+    "message": "Configuration"
+  },
+  "config_export_title": {
+    "message": "Export Configuration"
+  },
+  "config_export_description": {
+    "message": "Export all settings including general, model, and firewall configurations as a JSON file."
+  },
+  "config_export_button": {
+    "message": "Export Settings"
+  },
+  "config_import_title": {
+    "message": "Import Configuration"
+  },
+  "config_import_description": {
+    "message": "Import settings from a JSON file. This will overwrite your current general, model, and firewall configurations."
+  },
+  "config_import_button": {
+    "message": "Import Settings"
+  },
+  "config_import_success": {
+    "message": "Configuration imported successfully!"
+  },
+  "config_import_error": {
+    "message": "Failed to import configuration. Please check the file format."
+  },
+  "config_import_read_error": {
+    "message": "Failed to read the configuration file."
+  },
+  "config_export_error": {
+    "message": "Failed to export configuration."
+  },
   "options_general_header": {
     "message": "General"
   },
