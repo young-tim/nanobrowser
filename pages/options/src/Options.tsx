@@ -14,7 +14,7 @@ const TABS: { id: TabTypes; icon: React.ComponentType<{ className?: string }>; l
   { id: 'general', icon: FiSettings, label: t('options_tabs_general') },
   { id: 'models', icon: FiCpu, label: t('options_tabs_models') },
   { id: 'firewall', icon: FiShield, label: t('options_tabs_firewall') },
-  { id: 'help', icon: FiHelpCircle, label: t('options_tabs_help') },
+  // { id: 'help', icon: FiHelpCircle, label: t('options_tabs_help') },
 ];
 
 const Options = () => {
