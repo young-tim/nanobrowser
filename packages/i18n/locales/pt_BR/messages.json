@@ -248,22 +248,25 @@
     "message": "Falha ao exportar configuração."
   },
   "config_reset_title": {
-    "message": "Redefinir para Padrões"
+    "message": "Redefinir Configuração"
   },
   "config_reset_description": {
     "message": "Redefinir todas as configurações para seus valores padrão. Esta ação não pode ser desfeita."
   },
   "config_reset_button": {
-    "message": "Redefinir Configurações"
+    "message": "Redefinir para Padrões"
   },
-  "config_reset_success": {
-    "message": "Configuração redefinida para padrões com sucesso!"
-  },
-  "config_reset_error": {
-    "message": "Falha ao redefinir a configuração para os padrões."
+  "config_reset_button_loading": {
+    "message": "Redefinindo..."
   },
   "config_reset_confirm": {
     "message": "Tem certeza de que deseja redefinir todas as configurações para seus valores padrão? Esta ação não pode ser desfeita."
+  },
+  "config_reset_success": {
+    "message": "Configuração redefinida com sucesso!"
+  },
+  "config_reset_error": {
+    "message": "Falha ao redefinir configuração."
   },
   "options_general_header": {
     "message": "Geral"
