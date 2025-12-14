@@ -1,11 +1,11 @@
 {
   "app_metadata_description": {
     "description": "Extension description",
-    "message": "使用 AI 自动化网页任务！Nanobrowser 是一款开源的浏览器扩展程序，能帮助您抓取数据、填写表单等。"
+    "message": "使用 AI 自动化网页任务！AIbrowser 是一款开源的浏览器扩展程序，能帮助您抓取数据、填写表单等。"
   },
   "app_metadata_name": {
     "description": "Extension name",
-    "message": "Nanobrowser：AI 网页代理与自动化"
+    "message": "AIbrowser：AI 网页代理与自动化"
   },
   "errors_unknown": {
     "message": "发生未知错误"
@@ -38,7 +38,7 @@
     "message": "回到对话"
   },
   "welcome_title": {
-    "message": "欢迎使用 Nanobrowser！"
+    "message": "欢迎使用 AIbrowser！"
   },
   "welcome_instruction": {
     "message": "开始使用前，请先完成 API 密钥的设置。"
@@ -167,7 +167,7 @@
     "message": "启用语音输入"
   },
   "permissions_microphone_description": {
-    "message": "Nanobrowser 需要麦克风访问权限，才能将语音转换为文字。"
+    "message": "AIbrowser 需要麦克风访问权限，才能将语音转换为文字。"
   },
   "permissions_microphone_grantButton": {
     "message": "授予麦克风权限"
